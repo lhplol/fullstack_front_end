@@ -213,6 +213,8 @@ defineExpose({
       showOverflowTooltip
       table-layout="auto"
       v-bind="pureTableProps"
+      border
+      resizable
       @selection-change="handleSelectionChange"
       @page-size-change="handleSizeChange"
       @page-current-change="handleCurrentChange"
