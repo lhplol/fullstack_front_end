@@ -78,8 +78,8 @@ export const formatOptions = (data: Array<any>) => {
 };
 
 export const formatPublicLabels = (
-  t: Function,
-  te: Function,
+  t: (arg0: string, arg1?: object) => string,
+  te: (arg0: string, arg1?: string) => boolean,
   label: string,
   localeName: string
 ) => {
@@ -120,8 +120,8 @@ export const disableState = (props, key) => {
 export const formatFormColumns = (
   props: Record<string, any>,
   tableColumns: Array<any>,
-  t: Function,
-  te: Function,
+  t: (arg0: string, arg1?: object) => string,
+  te: (arg0: string, arg1?: string) => boolean,
   localeName: string,
   disabled: boolean = false
 ) => {
@@ -140,8 +140,8 @@ export const formatFormColumns = (
 
 export const formatColumnsLabel = (
   tableColumns: TableColumnList,
-  t: Function,
-  te: Function,
+  t: (arg0: string, arg1?: object) => string,
+  te: (arg0: string, arg1?: string) => boolean,
   localeName: string
 ) => {
   tableColumns.forEach(column => {
@@ -182,4 +182,23 @@ export const customRolePermissionOptions = (data: Array<any>) => {
     });
   });
   return result;
+};
+
+export const formatFiledAppParent = results => {
+  const app = {};
+  results.forEach(item => {
+    if (!item.parent && item.name !== "*") {
+      const appName = item.name.split(".")[0];
+      item.parent = appName;
+      app[appName] = {
+        pk: appName,
+        name: appName,
+        label: appName,
+        parent: null
+      };
+    }
+  });
+  Object.values(app).forEach(item => {
+    results.push(item);
+  });
 };

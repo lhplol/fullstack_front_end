@@ -5,7 +5,7 @@ import { formRules } from "./utils/rule";
 import { FormProps } from "./utils/types";
 import { message } from "@/utils/message";
 import { FieldKeyChoices } from "@/views/system/constants";
-import { hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { watchDeep } from "@vueuse/core";
 import ReCol from "@/components/ReCol";
 import { modelLabelFieldApi } from "@/api/system/field";
@@ -13,10 +13,10 @@ import {
   getDateTimePickerShortcuts,
   getPickerShortcuts
 } from "@/views/system/utils";
-import SearchUser from "@/views/system/components/searchUser.vue";
-import SearchDept from "@/views/system/components/searchDept.vue";
-import SearchRole from "@/views/system/components/searchRole.vue";
-import SearchMenu from "@/views/system/components/searchMenu.vue";
+import SearchUser from "@/views/system/components/SearchUser.vue";
+import SearchDept from "@/views/system/components/SearchDept.vue";
+import SearchRole from "@/views/system/components/SearchRole.vue";
+import SearchMenu from "@/views/system/components/SearchMenu.vue";
 import FromQuestion from "@/components/FromQuestion/index.vue";
 
 const props = withDefaults(defineProps<FormProps>(), {
@@ -40,15 +40,16 @@ function getRef() {
 
 const matchList = ref([]);
 const getMatchData = (value: any) => {
+  if (!value) return;
   if (value[0] === "*" && value[1] === "*") {
     matchList.value = ["*"];
     newFormInline.value.match = "*";
     newFormInline.value.value = "*";
     return;
   }
-  if (hasGlobalAuth("list:systemModelFieldLookups")) {
+  if (hasAuth("list:systemModelFieldLookups")) {
     modelLabelFieldApi
-      .lookups({ table: value[0], field: value[1] })
+      .lookups({ table: value[1], field: value[2] })
       .then(res => {
         if (res.code === 1000) {
           matchList.value = res.data;
@@ -76,7 +77,7 @@ const tableData = ref([]);
 
 onMounted(() => {
   valueTypeChange(newFormInline.value.type);
-  if (newFormInline.value?.name[0]) {
+  if (newFormInline.value?.name[1]) {
     getMatchData(newFormInline.value.name);
   }
   try {
@@ -128,8 +129,12 @@ defineExpose({ getRef });
             filterable
             @change="getMatchData"
           >
-            <template #default="{ data }">
-              <span>{{ data.label }}-{{ data.name }}</span>
+            <template #default="{ node, data }">
+              <span>{{ data.label }}</span>
+              <span v-show="data.parent">({{ data.name }})</span>
+              <span v-show="!node.isLeaf">
+                ({{ data?.children?.length }})
+              </span>
             </template>
           </el-cascader>
         </el-form-item>
@@ -223,7 +228,7 @@ defineExpose({ getRef });
         <el-form-item
           v-if="
             newFormInline.type === FieldKeyChoices.TABLE_USER &&
-            hasGlobalAuth('list:systemSearchUser')
+            hasAuth('list:systemSearchUser')
           "
           :label="t('systemPermission.notice_user')"
           prop="notice_user"
@@ -234,7 +239,7 @@ defineExpose({ getRef });
         <el-form-item
           v-if="
             newFormInline.type === FieldKeyChoices.TABLE_DEPT &&
-            hasGlobalAuth('list:systemSearchDept')
+            hasAuth('list:systemSearchDept')
           "
           :label="t('systemPermission.notice_dept')"
           prop="notice_dept"
@@ -244,7 +249,7 @@ defineExpose({ getRef });
         <el-form-item
           v-if="
             newFormInline.type === FieldKeyChoices.TABLE_ROLE &&
-            hasGlobalAuth('list:systemSearchRole')
+            hasAuth('list:systemSearchRole')
           "
           :label="t('systemPermission.notice_role')"
           prop="notice_role"
@@ -255,7 +260,7 @@ defineExpose({ getRef });
         <el-form-item
           v-if="
             newFormInline.type === FieldKeyChoices.TABLE_MENU &&
-            hasGlobalAuth('list:systemSearchMenu')
+            hasAuth('list:systemSearchMenu')
           "
           :label="t('systemPermission.notice_menu')"
           prop="notice_menu"

@@ -17,9 +17,7 @@ export function usePlusSearch(
   const selectVisible = ref(false);
 
   /** 分页配置 */
-  const defaultPagination = reactive<
-    Partial<PaginationProps> & { size?: string }
-  >({
+  const defaultPagination = reactive<PaginationProps>({
     total: 0,
     pageSize: isTree ? 1000 : 10,
     currentPage: 1,
@@ -68,8 +66,13 @@ export function usePlusSearch(
   };
 
   const removeTag = val => {
-    const { toggleRowSelection } = tableRef.value.getTableRef().getTableRef();
-    toggleRowSelection(dataList.value.filter(v => v.pk === val?.pk)[0], false);
+    if (dataList.value?.length > 0) {
+      const { toggleRowSelection } = tableRef.value.getTableRef().getTableRef();
+      toggleRowSelection(
+        dataList.value.filter(v => v.pk === val?.pk)[0],
+        false
+      );
+    }
   };
 
   const onClear = () => {
@@ -77,8 +80,10 @@ export function usePlusSearch(
     clearSelection();
   };
 
-  const onSure = () => {
+  const onSure = async () => {
     selectVisible.value = false;
+    selectRef.value.expanded = false;
+    await nextTick();
     selectRef.value.blur();
   };
 

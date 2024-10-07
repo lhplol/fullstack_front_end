@@ -2,7 +2,7 @@
 import { ref, watch } from "vue";
 import { usePlusSearch } from "./hooks";
 import { ClickOutside as vClickOutside } from "element-plus";
-import RePlusCRUD from "@/components/RePlusCRUD";
+import { RePlusPage } from "@/components/RePlusPage";
 import type { PlusSearchProps } from "./types";
 
 defineOptions({
@@ -82,8 +82,8 @@ watch(
       <el-tag type="primary">{{ value?.label }}</el-tag>
     </template>
     <template #empty>
-      <div class="max-w-[1000px] min-w-[800px]">
-        <RePlusCRUD
+      <div class="max-w-[100vw] min-w-[800px]">
+        <RePlusPage
           ref="tableRef"
           :api="api"
           :isTree="isTree"

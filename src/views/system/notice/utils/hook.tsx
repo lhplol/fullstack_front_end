@@ -3,16 +3,16 @@ import { noticeApi } from "@/api/system/notice";
 import { useRouter } from "vue-router";
 import { deviceDetection } from "@pureadmin/utils";
 import { addDialog } from "@/components/ReDialog";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { useI18n } from "vue-i18n";
 import { NoticeChoices } from "@/views/system/constants";
 import type {
   CRUDColumn,
   OperationProps,
   RePlusPageProps
-} from "@/components/RePlusCRUD";
-import noticeShowForm from "@/views/system/components/noticeShow.vue";
-import wangEditor from "@/components/RePlusCRUD/src/components/wangEditor.vue";
+} from "@/components/RePlusPage";
+import NoticeShowForm from "@/views/system/components/NoticeShow.vue";
+import WangEditor from "@/components/RePlusPage/src/components/WangEditor.vue";
 
 export function useNotice(tableRef: Ref) {
   const { t } = useI18n();
@@ -34,6 +34,17 @@ export function useNotice(tableRef: Ref) {
     width: 200,
     buttons: [
       {
+        code: "update",
+        update: true, // update:true 意味着我要更新这个按钮部分信息到默认的按钮信息，只更新props这个信息
+        props: (row, button) => {
+          const disabled = row?.notice_type?.value === NoticeChoices.SYSTEM;
+          return {
+            ...(button?._?.props ?? {}), // button?._ 这个表示之前老的按钮信息
+            ...{ disabled, type: disabled ? "default" : "primary" }
+          };
+        }
+      },
+      {
         code: "detail",
         onClick({ row }) {
           addDialog({
@@ -48,7 +59,7 @@ export function useNotice(tableRef: Ref) {
             fullscreenIcon: true,
             closeOnClickModal: false,
             hideFooter: true,
-            contentRenderer: () => h(noticeShowForm)
+            contentRenderer: () => h(NoticeShowForm)
           });
         },
         update: true
@@ -119,7 +130,7 @@ export function useNotice(tableRef: Ref) {
           column["hideInForm"] = computed(() => {
             return !(
               formValue.value?.notice_type?.value === NoticeChoices.USER &&
-              hasGlobalAuth("list:systemSearchUser")
+              hasAuth("list:systemSearchUser")
             );
           });
           return column;
@@ -128,7 +139,7 @@ export function useNotice(tableRef: Ref) {
           column["hideInForm"] = computed(() => {
             return !(
               formValue.value?.notice_type?.value === NoticeChoices.DEPT &&
-              hasGlobalAuth("list:systemSearchDept")
+              hasAuth("list:systemSearchDept")
             );
           });
           return column;
@@ -137,7 +148,7 @@ export function useNotice(tableRef: Ref) {
           column["hideInForm"] = computed(() => {
             return !(
               formValue.value?.notice_type?.value === NoticeChoices.ROLE &&
-              hasGlobalAuth("list:systemSearchRole")
+              hasAuth("list:systemSearchRole")
             );
           });
           return column;
@@ -145,7 +156,7 @@ export function useNotice(tableRef: Ref) {
         message: ({ column, formValue }) => {
           column["hasLabel"] = false;
           column["renderField"] = (value, onChange) => {
-            return h(wangEditor, {
+            return h(WangEditor, {
               modelValue: value,
               onChange: ({ messages, files }) => {
                 onChange(messages);
@@ -177,7 +188,7 @@ export function useNotice(tableRef: Ref) {
   const router = useRouter();
 
   function onGoNoticeReadDetail(row: any) {
-    if (hasGlobalAuth("list:systemNoticeRead") && row.pk) {
+    if (hasAuth("list:systemNoticeRead") && row.pk) {
       router.push({
         name: "SystemNoticeRead",
         query: { notice_id: row.pk }

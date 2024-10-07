@@ -8,6 +8,7 @@ import {
   useResizeObserver
 } from "@pureadmin/utils";
 import {
+  computed,
   defineComponent,
   getCurrentInstance,
   h,
@@ -70,15 +71,15 @@ export default defineComponent({
     const curIndex = isNumber(props.modelValue)
       ? toRef(props, "modelValue")
       : isNumber(props.defaultValue)
-        ? ref(props.defaultValue)
+        ? ref(computed(() => props.defaultValue))
         : ref(0);
 
     function handleChange({ option, index }, event: Event) {
       if (props.disabled || option.disabled) return;
       event.preventDefault();
-      isNumber(props.modelValue)
-        ? emit("update:modelValue", index)
-        : (curIndex.value = index);
+      if (isNumber(props.modelValue)) {
+        emit("update:modelValue", index);
+      }
       segmentedItembg.value = "";
       emit("change", { index, option });
     }
@@ -120,7 +121,9 @@ export default defineComponent({
       });
     }
 
-    (props.block || props.resize) && handleResizeInit();
+    if (props.block || props.resize) {
+      handleResizeInit();
+    }
 
     watch(
       () => curIndex.value,

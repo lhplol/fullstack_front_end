@@ -8,7 +8,7 @@ import type {
   SearchColumnsResult,
   SearchFieldsResult
 } from "@/api/types";
-import { downloadByData } from "@pureadmin/utils";
+import { buildUUID, downloadByData } from "@pureadmin/utils";
 
 export class BaseRequest {
   baseApi = "";
@@ -80,18 +80,18 @@ export class BaseApi extends BaseRequest {
       `${this.baseApi}/choices`
     );
   };
-  fields = () => {
+  fields = (params?: object) => {
     return this.request<SearchFieldsResult>(
       "get",
-      {},
+      params,
       {},
       `${this.baseApi}/search-fields`
     );
   };
-  columns = () => {
+  columns = (params?: object) => {
     return this.request<SearchColumnsResult>(
       "get",
-      {},
+      params,
       {},
       `${this.baseApi}/search-columns`
     );
@@ -129,7 +129,7 @@ export class BaseApi extends BaseRequest {
       `${this.baseApi}/${pk}`
     );
   };
-  batchDelete = (pks: Array<Number | String>) => {
+  batchDelete = (pks: Array<number | string>) => {
     return this.request<BaseResult>(
       "post",
       {},
@@ -157,12 +157,17 @@ export class BaseApi extends BaseRequest {
       .then(({ data, headers }: any) => {
         const filenameRegex = /filename[^;=\n]*="((['"]).*?\2|[^;\n]*)"/;
         const matches = filenameRegex.exec(headers.get("content-disposition"));
-        downloadByData(data, decodeURI(matches[1]));
+        downloadByData(
+          data,
+          decodeURI(
+            matches ? matches[1] : `${buildUUID()}.${(params as any)?.type}`
+          )
+        );
       });
   };
 
   import = (action: string, data: object) => {
-    return http.upload<BaseResult, {}>(
+    return http.upload<DetailResult, any>(
       `${this.baseApi}/import-data?action=${action}`,
       {},
       data,
@@ -172,5 +177,28 @@ export class BaseApi extends BaseRequest {
         }
       }
     );
+  };
+}
+
+export class ViewBaseApi extends BaseRequest {
+  columns = (params?: object) => {
+    return this.request<SearchColumnsResult>(
+      "get",
+      params,
+      {},
+      `${this.baseApi}/search-columns`
+    );
+  };
+  create = (params?: object, data?: object) => {
+    return this.request<DetailResult>("post", params, data);
+  };
+  detail = (params?: object) => {
+    return this.request<DetailResult>("get", params, {}, `${this.baseApi}`);
+  };
+  update = (params?: object, data?: object) => {
+    return this.request<DetailResult>("put", params, data, `${this.baseApi}`);
+  };
+  patch = (params?: object, data?: object) => {
+    return this.request<DetailResult>("patch", params, data, `${this.baseApi}`);
   };
 }

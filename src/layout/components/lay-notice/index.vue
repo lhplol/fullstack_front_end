@@ -36,11 +36,13 @@ const getNoticeData = () => {
   });
 };
 const router = useRouter();
+const dropdownRef = ref();
 
 const goUserNotice = () => {
   router.push({
     name: "UserNotice"
   });
+  dropdownRef.value?.handleClose();
 };
 
 const handleCommand = (flag: Boolean) => {
@@ -54,24 +56,17 @@ onMounted(() => {
 });
 
 const getLabel = computed(
-  () => item =>
-    t(item.name) + (item.list.length > 0 ? `(${item.list.length})` : "")
+  () => item => t(item.name) + (item.total > 0 ? `(${item.total})` : "")
 );
 </script>
 
 <template>
   <el-dropdown
+    ref="dropdownRef"
     placement="bottom-end"
     trigger="click"
     @visibleChange="handleCommand"
   >
-    <!--    <span class="dropdown-badge navbar-bg-hover select-none">-->
-    <!--      <el-badge :max="99" :value="useUserStoreHook().noticeCount">-->
-    <!--        <span class="header-notice-icon">-->
-    <!--          <IconifyIconOffline :icon="BellIcon" />-->
-    <!--        </span>-->
-    <!--      </el-badge>-->
-    <!--    </span>-->
     <span
       :class="[
         'dropdown-badge',

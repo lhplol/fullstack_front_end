@@ -1,14 +1,14 @@
 import { useI18n } from "vue-i18n";
 import { loginLogApi } from "@/api/system/logs/login";
 import { useRouter } from "vue-router";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { reactive, shallowRef } from "vue";
 import { usePublicHooks } from "@/views/system/hooks";
 import {
   type CRUDColumn,
   type OperationProps,
   renderBooleanTag
-} from "@/components/RePlusCRUD";
+} from "@/components/RePlusPage";
 
 export function useLoginLog() {
   const { t } = useI18n();
@@ -41,7 +41,8 @@ export function useLoginLog() {
           column["cellRenderer"] = renderBooleanTag({
             t,
             tagStyle,
-            field: column.prop
+            field: column.prop,
+            actionMap: { true: t("labels.success"), false: t("labels.failed") }
           });
           break;
       }
@@ -50,7 +51,7 @@ export function useLoginLog() {
   };
 
   function onGoDetail(row: any) {
-    if (hasGlobalAuth("list:systemUser") && row?.creator && row?.creator?.pk) {
+    if (hasAuth("list:systemUser") && row?.creator && row?.creator?.pk) {
       router.push({
         name: "SystemUser",
         query: { pk: row.creator.pk }

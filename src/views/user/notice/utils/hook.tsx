@@ -7,9 +7,9 @@ import { useI18n } from "vue-i18n";
 import { useUserStoreHook } from "@/store/modules/user";
 
 import { hasAuth } from "@/router/utils";
-import type { CRUDColumn, OperationProps } from "@/components/RePlusCRUD";
+import type { CRUDColumn, OperationProps } from "@/components/RePlusPage";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import noticeShowForm from "@/views/system/components/noticeShow.vue";
+import NoticeShowForm from "@/views/system/components/NoticeShow.vue";
 
 import Success from "@iconify-icons/ep/success-filled";
 
@@ -70,7 +70,7 @@ export function useUserNotice(tableRef: Ref) {
       fullscreenIcon: true,
       closeOnClickModal: false,
       hideFooter: true,
-      contentRenderer: () => h(noticeShowForm),
+      contentRenderer: () => h(NoticeShowForm),
       closeCallBack: () => {
         if (routeParams?.pk) {
           searchFields.value.pk = "";
@@ -107,7 +107,7 @@ export function useUserNotice(tableRef: Ref) {
       switch (column._column?.key) {
         case "title":
           column["cellRenderer"] = ({ row }) => (
-            <el-text type={row.level}>{row.title}</el-text>
+            <el-text type={row.level?.value}>{row.title}</el-text>
           );
           break;
         case "unread":

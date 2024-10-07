@@ -9,17 +9,17 @@ import croppingUpload from "@/components/RePictureUpload";
 import { roleApi } from "@/api/system/role";
 import {
   cloneDeep,
+  createFormData,
   deviceDetection,
   isAllEmpty,
   isPhone
 } from "@pureadmin/utils";
 import { useRouter } from "vue-router";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { useI18n } from "vue-i18n";
 import { handleTree } from "@/utils/tree";
 import { deptApi } from "@/api/system/dept";
 import { dataPermissionApi } from "@/api/system/permission";
-import { REGEXP_PWD } from "@/views/login/utils/rule";
 import { customRolePermissionOptions, picturePng } from "@/views/system/hooks";
 import { AesEncrypted } from "@/utils/aes";
 import {
@@ -27,13 +27,17 @@ import {
   handleOperation,
   openFormDialog,
   type OperationProps,
-  type RePlusPageProps
-} from "@/components/RePlusCRUD";
+  renderSwitch,
+  type RePlusPageProps,
+  usePublicHooks
+} from "@/components/RePlusPage";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import Role from "@iconify-icons/ri/admin-line";
 import Avatar from "@iconify-icons/ri/user-3-fill";
 import Password from "@iconify-icons/ri/lock-password-line";
 import Message from "@iconify-icons/ri/message-fill";
+import { rulesPasswordApi } from "@/api/auth";
+import { passwordRulesCheck } from "@/utils";
 
 export function useUser(tableRef: Ref) {
   const { t } = useI18n();
@@ -52,12 +56,12 @@ export function useUser(tableRef: Ref) {
     choices: hasAuth("choices:systemUser"),
     export: hasAuth("export:systemUser"),
     import: hasAuth("import:systemUser"),
+    unBlock: hasAuth("unBlock:systemUser"),
     batchDelete: hasAuth("batchDelete:systemUser")
   });
 
   const cropRef = ref();
   const router = useRouter();
-  const choicesDict = ref({});
   const treeData = ref([]);
   const treeLoading = ref(true);
 
@@ -68,7 +72,8 @@ export function useUser(tableRef: Ref) {
   const manySelectData = ref([]);
   const avatarInfo = ref();
   const ruleFormRef = ref();
-
+  const switchLoadMap = ref({});
+  const { switchStyle } = usePublicHooks();
   // reset password
   const pwdForm = reactive({
     newPwd: ""
@@ -114,21 +119,22 @@ export function useUser(tableRef: Ref) {
           ref: cropRef,
           canvasOption: { width: 512, height: 512 }
         }),
-      beforeSure: done => {
-        const avatarFile = new File([avatarInfo.value.blob], "avatar.png", {
-          type: avatarInfo.value.blob.type,
-          lastModified: Date.now()
+      beforeSure: (done, { closeLoading }) => {
+        const formData = createFormData({
+          file: new File([avatarInfo.value.blob], "avatar.png", {
+            type: avatarInfo.value.blob.type,
+            lastModified: Date.now()
+          })
         });
-        const data = new FormData();
-        data.append("file", avatarFile);
-        api.upload(row.pk, data).then(res => {
-          if (res.code === 1000) {
-            message(t("results.success"), { type: "success" });
+        handleOperation({
+          t,
+          apiReq: api.upload(row.pk, formData),
+          success() {
             tableRef.value.handleGetData();
             done();
-          } else {
-            message(`${t("results.failed")}，${res.detail}`, { type: "error" });
-            done();
+          },
+          requestEnd() {
+            closeLoading();
           }
         });
       },
@@ -157,12 +163,15 @@ export function useUser(tableRef: Ref) {
                 {
                   required: true,
                   validator: (rule, value, callback) => {
-                    if (value === "") {
-                      callback(new Error(t("systemUser.password")));
-                    } else if (!REGEXP_PWD.test(value)) {
-                      callback(new Error(t("login.passwordRuleReg")));
-                    } else {
+                    const { result, msg } = passwordRulesCheck(
+                      value,
+                      passwordRules.value,
+                      t
+                    );
+                    if (result) {
                       callback();
+                    } else {
+                      callback(new Error(msg));
                     }
                   },
                   trigger: "blur"
@@ -229,20 +238,15 @@ export function useUser(tableRef: Ref) {
   }
 
   onMounted(() => {
-    api.choices().then(res => {
-      if (res.code === 1000) {
-        choicesDict.value = res.choices_dict;
-      }
-    });
     if (auth.empower) {
-      if (hasGlobalAuth("list:systemRole")) {
+      if (hasAuth("list:systemRole")) {
         roleApi.list({ page: 1, size: 1000 }).then(res => {
           if (res.code === 1000 && res.data) {
             rolesOptions.value = res.data.results;
           }
         });
       }
-      if (hasGlobalAuth("list:systemDataPermission")) {
+      if (hasAuth("list:systemDataPermission")) {
         dataPermissionApi
           .list({
             page: 1,
@@ -256,7 +260,7 @@ export function useUser(tableRef: Ref) {
       }
     }
     // 部门列表
-    if (hasGlobalAuth("list:systemDept")) {
+    if (hasAuth("list:systemDept")) {
       deptApi.list({ page: 1, size: 1000 }).then(res => {
         if (res.code === 1000 && res.data) {
           treeData.value = handleTree(res.data.results);
@@ -301,6 +305,16 @@ export function useUser(tableRef: Ref) {
               {row.gender.label}
             </el-tag>
           );
+          break;
+        case "block":
+          column["cellRenderer"] = renderSwitch({
+            t,
+            updateApi: api.unBlock,
+            switchLoadMap,
+            switchStyle,
+            field: column.prop,
+            disabled: row => !auth.unBlock || !row.block
+          });
           break;
       }
     });
@@ -349,18 +363,21 @@ export function useUser(tableRef: Ref) {
             {
               required: true,
               validator: (rule, value, callback) => {
-                if (value === "") {
-                  callback(new Error(t("login.passwordReg")));
-                } else if (!REGEXP_PWD.test(value)) {
-                  callback(new Error(t("login.passwordRuleReg")));
-                } else {
+                const { result, msg } = passwordRulesCheck(
+                  value,
+                  passwordRules.value,
+                  t
+                );
+                if (result) {
                   callback();
+                } else {
+                  callback(new Error(msg));
                 }
               },
               trigger: "blur"
             }
           ];
-          rules["mobile"] = [
+          rules["phone"] = [
             {
               validator: (rule, value, callback) => {
                 if (value === "" || !value) {
@@ -390,6 +407,7 @@ export function useUser(tableRef: Ref) {
   });
 
   const roleRulesColumns = ref([]);
+  const passwordRules = ref([]);
   const roleRules = ref({});
   const baseColumnsFormat = ({ addOrEditColumns, addOrEditRules }) => {
     roleRules.value = addOrEditRules.value;
@@ -419,7 +437,7 @@ export function useUser(tableRef: Ref) {
         column.hideInForm = true;
       }
       if (
-        ["username", "nickname", "mobile", "email", "gender"].indexOf(
+        ["username", "nickname", "phone", "email", "gender"].indexOf(
           column._column.key
         ) > -1
       ) {
@@ -438,7 +456,7 @@ export function useUser(tableRef: Ref) {
       rawFormProps: {
         rules: roleRules.value
       },
-      saveCallback: ({ formData, done, dialogOptions }) => {
+      saveCallback: ({ formData, done, closeLoading }) => {
         handleOperation({
           t,
           apiReq: api.empower(row.pk, {
@@ -451,7 +469,7 @@ export function useUser(tableRef: Ref) {
             tableRef.value.handleGetData();
           },
           requestEnd() {
-            dialogOptions.confirmLoading = false;
+            closeLoading();
           }
         });
       }
@@ -472,9 +490,7 @@ export function useUser(tableRef: Ref) {
           goNotice();
         },
         show: () => {
-          return Boolean(
-            hasGlobalAuth("create:systemNotice") && selectedNum.value
-          );
+          return Boolean(hasAuth("create:systemNotice") && selectedNum.value);
         }
       }
     ]
@@ -524,6 +540,17 @@ export function useUser(tableRef: Ref) {
         show: auth.empower
       }
     ]
+  });
+
+  onMounted(() => {
+    handleOperation({
+      t,
+      apiReq: rulesPasswordApi(),
+      success({ data: { password_rules } }) {
+        passwordRules.value = password_rules;
+      },
+      showSuccessMsg: false
+    });
   });
 
   return {

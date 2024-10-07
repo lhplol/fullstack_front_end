@@ -42,7 +42,7 @@ const props = withDefaults(defineProps<FormProps>(), {
       r_svg_name: "",
       is_show_menu: true,
       is_show_parent: false,
-      is_keepalive: false,
+      is_keepalive: true,
       frame_url: "",
       frame_loading: false,
       transition_enter: "",
@@ -428,7 +428,7 @@ defineExpose({ getRef });
             filterable
           >
             <el-option
-              v-for="item in props.menuUrlList"
+              v-for="item in menuUrlList"
               :key="item.name"
               :label="`${item.name}----${item.url}`"
               :value="item.url"
@@ -442,22 +442,26 @@ defineExpose({ getRef });
               :label="t('systemMenu.associationModel')"
             />
           </template>
-          <el-select
+          <el-cascader
             v-model="newFormInline.model"
+            :options="modelList"
+            :props="{
+              multiple: true,
+              emitPath: false,
+              checkStrictly: false
+            }"
             class="w-full"
             clearable
             filterable
-            multiple
-            value-key="pk"
           >
-            <el-option
-              v-for="item in props.modelList"
-              :key="item.pk"
-              :disabled="item.disabled || item.name === '*'"
-              :label="`${item.label}(${item.name})`"
-              :value="{ pk: item.pk, name: item.name }"
-            />
-          </el-select>
+            <template #default="{ node, data }">
+              <span>{{ data.label }}</span>
+              <span v-show="data.parent">({{ data.name }})</span>
+              <span v-show="!node.isLeaf">
+                ({{ data?.children?.length }})
+              </span>
+            </template>
+          </el-cascader>
         </el-form-item>
         <el-form-item :label="t('systemMenu.requestMethod')" prop="method">
           <el-select
@@ -466,7 +470,7 @@ defineExpose({ getRef });
             clearable
           >
             <el-option
-              v-for="item in props.methodChoices"
+              v-for="item in methodChoices"
               :key="item.value"
               :disabled="item.disabled"
               :label="item.label"

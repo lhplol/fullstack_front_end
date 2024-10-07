@@ -5,13 +5,14 @@ import { addDialog } from "@/components/ReDialog";
 import editForm from "../edit.vue";
 import type { FormItemProps } from "./types";
 import { handleTree } from "@/utils/tree";
-import { cloneDeep, deviceDetection, getKeyList } from "@pureadmin/utils";
+import { cloneDeep, deviceDetection } from "@pureadmin/utils";
 import { getMenuFromPk, getMenuOrderPk } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { FieldChoices, MenuChoices } from "@/views/system/constants";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { modelLabelFieldApi } from "@/api/system/field";
-import { handleExportData, handleImportData } from "@/components/RePlusCRUD";
+import { handleExportData, handleImportData } from "@/components/RePlusPage";
+import { formatFiledAppParent } from "@/views/system/hooks";
 
 const defaultData: FormItemProps = {
   menu_type: MenuChoices.DIRECTORY,
@@ -29,7 +30,7 @@ const defaultData: FormItemProps = {
     r_svg_name: "",
     is_show_menu: true,
     is_show_parent: false,
-    is_keepalive: false,
+    is_keepalive: true,
     frame_url: "",
     frame_loading: false,
     transition_enter: "",
@@ -72,7 +73,7 @@ export function useMenu() {
   const choicesDict = ref([]);
   const menuUrlList = ref([]);
   const modelList = ref([]);
-  const menuData = reactive<FormItemProps>(cloneDeep(defaultData));
+  const menuData = ref<FormItemProps>(cloneDeep(defaultData));
   const loading = ref(true);
 
   const getMenuApiList = () => {
@@ -135,8 +136,8 @@ export function useMenu() {
     });
   }
 
-  const handleConfirm = (formRef, row) => {
-    formRef!.validate((isValid: boolean) => {
+  const handleConfirm = (instance, row) => {
+    instance!.validate((isValid: boolean) => {
       if (isValid) {
         row.meta.title = row.title;
         if (row.pk) {
@@ -188,7 +189,7 @@ export function useMenu() {
           method: row?.method ?? "",
           rank: row?.rank ?? 0,
           component: row?.component ?? "",
-          model: getKeyList(row?.model ?? [], "pk") ?? [],
+          model: row?.model ?? [],
           is_active: row?.is_active ?? true,
           meta: {
             title: row?.meta.title ?? "",
@@ -197,7 +198,7 @@ export function useMenu() {
             r_svg_name: row?.meta.r_svg_name ?? "",
             is_show_menu: row?.meta.is_show_menu ?? true,
             is_show_parent: row?.meta.is_show_parent ?? false,
-            is_keepalive: row?.meta.is_keepalive ?? false,
+            is_keepalive: row?.meta.is_keepalive ?? true,
             frame_loading: row?.meta.frame_loading ?? false,
             transition_enter: row?.meta.transition_enter ?? "",
             transition_leave: row?.meta.transition_leave ?? "",
@@ -214,9 +215,9 @@ export function useMenu() {
       closeOnClickModal: false,
       contentRenderer: () => h(editForm, { ref: formRef }),
       beforeSure: (done, { options }) => {
-        const FormRef = formRef.value.getRef();
+        const FormRef = formRef.value?.getRef();
         const curData = options.props.formInline as FormItemProps;
-        FormRef.validate(valid => {
+        FormRef?.validate(valid => {
           if (valid) {
             curData.meta.title = curData.title;
             // 当后端pk 不设置可读时，需要删除pk，否则后端会提示 pk 不对
@@ -284,7 +285,7 @@ export function useMenu() {
   onMounted(() => {
     getMenuApiList();
     getMenuData();
-    if (hasGlobalAuth("list:systemModelField")) {
+    if (hasAuth("list:systemModelField")) {
       modelLabelFieldApi
         .list({
           page: 1,
@@ -294,7 +295,13 @@ export function useMenu() {
         })
         .then(res => {
           if (res.code === 1000) {
-            modelList.value = res.data.results;
+            const results = [];
+            res.data.results.forEach(item => {
+              const value = { pk: item.pk, name: item.name, label: item.label };
+              results.push({ ...value, value });
+            });
+            formatFiledAppParent(results);
+            modelList.value = handleTree(results);
           }
         });
     }

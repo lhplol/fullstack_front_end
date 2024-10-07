@@ -7,7 +7,7 @@ import { useI18n } from "vue-i18n";
 import { useApiAuth } from "./utils/hook";
 
 defineOptions({
-  name: "editUserInfo"
+  name: "EditUserInfo"
 });
 
 const props = withDefaults(defineProps<FormProps>(), {
@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<FormProps>(), {
     username: "",
     nickname: "",
     avatar: "",
-    mobile: "",
+    phone: "",
     email: "",
     gender: 0
   })
@@ -68,10 +68,10 @@ const handleUpdate = row => {
         </el-form-item>
       </re-col>
       <re-col :sm="24" :value="12" :xs="24">
-        <el-form-item :label="t('userinfo.mobile')" prop="mobile">
+        <el-form-item :label="t('userinfo.phone')" prop="phone">
           <el-input
-            v-model="newFormInline.mobile"
-            :placeholder="t('userinfo.mobile')"
+            v-model="newFormInline.phone"
+            :placeholder="t('userinfo.phone')"
             clearable
           />
         </el-form-item>

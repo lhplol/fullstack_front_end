@@ -1,13 +1,14 @@
 import { dataPermissionApi } from "@/api/system/permission";
 import { h, onMounted, reactive, ref, shallowRef } from "vue";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { FieldChoices } from "@/views/system/constants";
 import { handleTree } from "@/utils/tree";
 import { modelLabelFieldApi } from "@/api/system/field";
 import { transformI18n } from "@/plugins/i18n";
 import { getKeyList } from "@pureadmin/utils";
-import type { OperationProps, RePlusPageProps } from "@/components/RePlusCRUD";
+import type { OperationProps, RePlusPageProps } from "@/components/RePlusPage";
 import filterForm from "../filter/index.vue";
+import { formatFiledAppParent } from "@/views/system/hooks";
 
 export function useDataPermission() {
   const fieldLookupsData = ref([]);
@@ -28,7 +29,7 @@ export function useDataPermission() {
   });
 
   onMounted(() => {
-    if (hasGlobalAuth("list:systemModelField")) {
+    if (hasAuth("list:systemModelField")) {
       modelLabelFieldApi
         .list({
           page: 1,
@@ -37,6 +38,7 @@ export function useDataPermission() {
         })
         .then(res => {
           if (res.code === 1000) {
+            formatFiledAppParent(res.data.results);
             fieldLookupsData.value = handleTree(res.data.results);
           }
         });

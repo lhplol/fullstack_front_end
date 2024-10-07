@@ -1,15 +1,14 @@
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { reactive, type Ref, shallowRef } from "vue";
 import { userConfigApi } from "@/api/system/config/user";
-
 import {
   type CRUDColumn,
   handleOperation,
   type OperationProps,
   type RePlusPageProps
-} from "@/components/RePlusCRUD";
+} from "@/components/RePlusPage";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import CircleClose from "@iconify-icons/ep/circle-close";
 
@@ -66,7 +65,7 @@ export function useUserConfig(tableRef: Ref) {
   const router = useRouter();
 
   const onGoUserDetail = (row: any) => {
-    if (hasGlobalAuth("list:systemUser") && row.owner && row.owner?.pk) {
+    if (hasAuth("list:systemUser") && row.owner && row.owner?.pk) {
       router.push({
         name: "SystemUser",
         query: { pk: row.owner.pk }

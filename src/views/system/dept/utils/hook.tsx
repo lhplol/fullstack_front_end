@@ -2,7 +2,7 @@ import { deptApi } from "@/api/system/dept";
 import { reactive, ref, type Ref, shallowRef } from "vue";
 import { cloneDeep } from "@pureadmin/utils";
 import { useRouter } from "vue-router";
-import { hasAuth, hasGlobalAuth } from "@/router/utils";
+import { hasAuth } from "@/router/utils";
 import { useI18n } from "vue-i18n";
 import { customRolePermissionOptions } from "@/views/system/hooks";
 import { handleTree } from "@/utils/tree";
@@ -12,7 +12,7 @@ import {
   openFormDialog,
   type OperationProps,
   type RePlusPageProps
-} from "@/components/RePlusCRUD";
+} from "@/components/RePlusPage";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import Role from "@iconify-icons/ri/admin-line";
 
@@ -96,7 +96,7 @@ export function useDept(tableRef: Ref) {
   const router = useRouter();
 
   function onGoDetail(row: any) {
-    if (hasGlobalAuth("list:systemUser") && row.user_count && row.pk) {
+    if (hasAuth("list:systemUser") && row.user_count && row.pk) {
       router.push({
         name: "SystemUser",
         query: { dept: row.pk }
@@ -146,7 +146,7 @@ export function useDept(tableRef: Ref) {
       rawFormProps: {
         rules: roleRules.value
       },
-      saveCallback: ({ formData, done, dialogOptions }) => {
+      saveCallback: ({ formData, done, closeLoading }) => {
         handleOperation({
           t,
           apiReq: api.empower(row.pk, {
@@ -159,7 +159,7 @@ export function useDept(tableRef: Ref) {
             tableRef.value.handleGetData();
           },
           requestEnd() {
-            dialogOptions.confirmLoading = false;
+            closeLoading();
           }
         });
       }

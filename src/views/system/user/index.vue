@@ -2,7 +2,7 @@
 import tree from "./tree.vue";
 import { computed, ref } from "vue";
 import { useUser } from "./utils/hook";
-import RePlusCRUD from "@/components/RePlusCRUD";
+import { RePlusPage } from "@/components/RePlusPage";
 
 defineOptions({
   name: "SystemUser"
@@ -44,7 +44,7 @@ const {
       :treeLoading="treeLoading"
       @tree-select="onTreeSelect"
     />
-    <RePlusCRUD
+    <RePlusPage
       ref="tableRef"
       :api="api"
       :auth="auth"
@@ -59,3 +59,9 @@ const {
     />
   </div>
 </template>
+
+<style scoped lang="scss">
+.main-content {
+  margin: 24px 24px 0 !important;
+}
+</style>
