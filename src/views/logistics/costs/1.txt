@@ -1,0 +1,50 @@
+<script lang="ts" setup>
+import RePlusCRUD from "@/components/RePlusCRUD";
+import { useFreightBill } from "./utils/hook";
+
+const { api, auth } = useFreightBill();
+
+const listColumnsFormat = columns => {
+  return columns.map(column => {
+    // 在处理前打印列的信息
+    console.log("处理前：", {
+      case: column.prop,
+      prop: column.prop,
+      label: column.label,
+      minWidth: column.minWidth,
+      width: column.width,
+      maxWidth: column.maxWidth
+    });
+
+    switch (column.prop) {
+      case "pk":
+        column.minWidth = 35;
+        break;
+      case "description":
+        column.minWidth = 200;
+        break;
+    }
+
+    // 在处理后打印列的信息
+    console.log("处理后：", {
+      case: column.prop,
+      prop: column.prop,
+      label: column.label,
+      minWidth: column.minWidth,
+      width: column.width,
+      maxWidth: column.maxWidth
+    });
+
+    return column;
+  });
+};
+</script>
+
+<template>
+  <RePlusCRUD
+    :api="api"
+    :auth="auth"
+    locale-name="freightBill"
+    :listColumnsFormat="listColumnsFormat"
+  />
+</template>
